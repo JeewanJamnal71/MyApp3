@@ -21,6 +21,7 @@ const windowHeight = Dimensions.get('window').height;
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   const [tableData, setTableData] = useState([])
+  const [showLoader, setShowLoader] = useState(true)
 
   useEffect(()=>{
     try{
@@ -29,25 +30,44 @@ function App(): JSX.Element {
     
   },[])
 
+  const insertData=(fetchData:any)=>{
+    updateTable(fetchData).then(async(data) => {   
+      let tabelData = await getDataFromTable()       
+      if(tabelData && tabelData.length>0){
+        setTableData(tabelData)
+        setShowLoader(false)
+      }
+    }).catch((error) => {
+          console.log("update",error);
+          setShowLoader(false)
+      });
+  }
+
   useEffect(()=>{
     setTableData([])
     async function getData(){
       let fetchData = await getApiData()
       if(fetchData && fetchData.length>0){
         createTable().then(async(data) => {
-        updateTable(fetchData).then(async(data) => {   
-          let tabelData = await getDataFromTable()   
-          console.log("tableData>>>>", tabelData.length)    
-          if(tabelData && tabelData.length>0){
-            setTableData(tabelData)
+          if(data === "403"){ //table already there
+            let tabelData = await getDataFromTable()   
+              if(tabelData.length>0){   
+                setTableData(tabelData)
+                setShowLoader(false)
+              }else{    
+                insertData(fetchData)
+              }
+          }else{    
+            insertData(fetchData)
           }
-        }).catch((error) => {
-              console.log("update",error);
-          });
-        })
+          
+          })
         .catch((error) => {
           console.log("create",error);
+          setShowLoader(false)
         });
+      }else{
+        setShowLoader(false)
       }
     }
     getData()
@@ -57,10 +77,13 @@ function App(): JSX.Element {
   },[])
 
   const filterData=async(type:string)=>{
+    setShowLoader(true)
     let _filteredData = await filterDbData(type)
-    console.log("length>>>>",_filteredData.length)
     if(_filteredData && _filteredData.length>0){
       setTableData(_filteredData)
+      setShowLoader(false)
+    }else{
+      setShowLoader(false)
     }
   }
 
@@ -94,6 +117,7 @@ function App(): JSX.Element {
           </View>
           
           {
+            showLoader ? <ActivityIndicator size="large" /> :
             tableData && tableData.length>0 ? tableData.map((data,index)=>{
               let bookObject = eval('(' + data?.book + ')');
               return(<View key={data?.id+index} style={{width:300,height:100,backgroundColor:'#CCCCCC',borderRadius:5,alignSelf:'center',alignItems:'center',justifyContent:'center',marginTop:5}}>
@@ -101,7 +125,9 @@ function App(): JSX.Element {
                       <Text style={{color:'#111',fontSize:12}}>Book name: {bookObject?.name}</Text>
                       <Text style={{color:'#111',fontSize:12}}>Time: {data?.timePlaced}</Text>
                     </View>)
-            }) :  <ActivityIndicator size="large" />
+            }) :  <View style={{width:300,height:100,alignSelf:'center',alignItems:'center',justifyContent:'center',marginTop:5}}>
+                    <Text style={{color:'#111',fontSize:12}}>No Data!!!!</Text>
+                  </View>
           }
         </ScrollView>
       </View>

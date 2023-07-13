@@ -13,27 +13,33 @@ import {enablePromise, openDatabase, SQLiteDatabase} from 'react-native-sqlite-s
   };
 
   async function createTable(){
-    // create table if not exists
-    // const query = `CREATE TABLE IF NOT EXISTS BooksData (id TEXT, bettor TEXT, book TEXT,
-    //   bettorAccount TEXT, bookRef TEXT, timePlaced TEXT, type TEXT, subtype TEXT, oddsAmerican TEXT, atRisk TEXT, toWin TEXT, status TEXT, outcome TEXT,
-    //   refreshResponse TEXT, incomplete TEXT, netProfit TEXT, dateClosed TEXT, typeSpecial TEXT, bets TEXT, adjusted TEXT)`;
-      
+   
     const query = `CREATE TABLE IF NOT EXISTS BooksData (id VARCHAR, bettor VARCHAR, book VARCHAR,
       bettorAccount VARCHAR, bookRef VARCHAR, timePlaced VARCHAR, type VARCHAR, subtype VARCHAR, oddsAmerican VARCHAR, atRisk VARCHAR, toWin VARCHAR, status VARCHAR, outcome VARCHAR,
       refreshResponse VARCHAR, incomplete VARCHAR, netProfit VARCHAR, dateClosed VARCHAR, typeSpecial VARCHAR, bets VARCHAR, adjusted VARCHAR)`;
       
-
       return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-          tx.executeSql(query,[],(_tx,result) => {
-            console.log("Create Table Successful",result);
-            resolve("Create Table Successful",);
-          }, (_tx,error) => {
-              console.log("Create Table error", error);
-              reject(error);
-          });
-        })
-      })
+        db.transaction(function (txn) {
+          txn.executeSql(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='BooksData'",
+            [],
+            function (tx, res) {
+              if (res.rows.length == 0) { // table not exist
+                txn.executeSql('DROP TABLE IF EXISTS table_user', []);
+                txn.executeSql(query,[],(_tx,result) => {
+                  console.log("Create Table Successful",result);
+                  resolve("Create Table Successful",);
+                }, (_tx,error) => {
+                    console.log("Create Table error", error);
+                    reject(error);
+                });
+              }else{
+                resolve("403",);
+              }
+            }
+          );
+        });
+      });
 
   };
 
