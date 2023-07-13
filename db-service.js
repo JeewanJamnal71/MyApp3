@@ -43,7 +43,7 @@ import {enablePromise, openDatabase, SQLiteDatabase} from 'react-native-sqlite-s
         dataArray.forEach((data) => {
           tx.executeSql(
             'INSERT INTO BooksData (id, bettor, book, bettorAccount, bookRef, timePlaced, type, subtype, oddsAmerican, atRisk, toWin, status, outcome, refreshResponse, incomplete, netProfit, dateClosed, typeSpecial, bets, adjusted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [data.id, data.bettor, data.book, data.bettorAccount, data.bookRef, data.timePlaced, data.type, data.subtype, data.oddsAmerican, data.atRisk, data.toWin, data.status, data.outcome, data.refreshResponse, data.incomplete, data.netProfit, data.dateClosed, data.typeSpecial, data.bets, data.adjusted],
+            [data.id, data.bettor, JSON.stringify(data.book), data.bettorAccount, data.bookRef, data.timePlaced, data.type, data.subtype, data.oddsAmerican, data.atRisk, data.toWin, data.status, data.outcome, data.refreshResponse, data.incomplete, data.netProfit, data.dateClosed, data.typeSpecial, data.bets, data.adjusted],
             (_tx, results) => {
               console.log("records updated successfully")
               resolve('records updated successfully');
@@ -84,29 +84,53 @@ import {enablePromise, openDatabase, SQLiteDatabase} from 'react-native-sqlite-s
 
   async function filterDbData(type){
     return new Promise((resolve, reject) => {
+      if(type === 'asc' || type === 'dsc'){
+        let query = type === "asc" ? `SELECT * FROM BooksData ORDER BY book LIKE '%"$name":"%' ASC
+        ` : `SELECT * FROM BooksData ORDER BY book LIKE '%"$name":"%' DESC`
 
-      const formattedWeekStart =  type === "week" ? "2022-06-01T00:00:00Z" : type === "month" ? "2022-05-01T00:00:00Z": "2021-01-01T00:00:00Z";
-      const formattedWeekEnd =  type === "week" ? "2022-06-07T00:00:00Z" : type === "month" ? "2022-05-31T00:00:00Z": "2021-12-31T00:00:00Z";
-
-      // Execute the query with the date filter
-      db.transaction(tx => {
-        tx.executeSql(
-          `SELECT * FROM BooksData where timePlaced BETWEEN ? AND ?`,
-          [formattedWeekStart,formattedWeekEnd],
-          (_tx, results) => {
-            const rows = results.rows;
-            const data = [];
-            for (let i = 0; i < rows.length; i++) {
-              const row = rows.item(i);
-              data.push(row);
+        db.transaction(tx => {
+          tx.executeSql(
+            query,
+            [],
+            (_tx, results) => {
+              const rows = results.rows;
+              console.log("rows>>>>", rows.length)
+              const data = [];
+              for (let i = 0; i < rows.length; i++) {
+                const row = rows.item(i);
+                data.push(row);
+              }
+              resolve(data);
+            },
+            error => {
+              console.error(error);
             }
-            resolve(data);
-          },
-          error => {
-            console.error(error);
-          }
-        );
-      });
+          );
+        });
+      }else{
+        const formattedWeekStart =  type === "week" ? "2022-06-01T00:00:00Z" : type === "month" ? "2022-05-01T00:00:00Z": "2021-01-01T00:00:00Z";
+        const formattedWeekEnd =  type === "week" ? "2022-06-07T00:00:00Z" : type === "month" ? "2022-05-31T00:00:00Z": "2021-12-31T00:00:00Z";
+
+        // Execute the query with the date filter
+        db.transaction(tx => {
+          tx.executeSql(
+            `SELECT * FROM BooksData where timePlaced BETWEEN ? AND ? ORDER BY timePlaced ASC`,
+            [formattedWeekStart,formattedWeekEnd],
+            (_tx, results) => {
+              const rows = results.rows;
+              const data = [];
+              for (let i = 0; i < rows.length; i++) {
+                const row = rows.item(i);
+                data.push(row);
+              }
+              resolve(data);
+            },
+            error => {
+              console.error(error);
+            }
+          );
+        });
+      }
     })
   }
 

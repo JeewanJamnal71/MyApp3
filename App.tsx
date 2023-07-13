@@ -30,19 +30,20 @@ function App(): JSX.Element {
   },[])
 
   useEffect(()=>{
+    setTableData([])
     async function getData(){
       let fetchData = await getApiData()
       if(fetchData && fetchData.length>0){
         createTable().then(async(data) => {
-            updateTable(fetchData).then(async(data) => {
-              let tabelData = await getDataFromTable()
-                if(tabelData && tabelData.length>0){
-                  setTableData(tabelData)
-                }
-            })
-            .catch((error) => {
+        updateTable(fetchData).then(async(data) => {   
+          let tabelData = await getDataFromTable()   
+          console.log("tableData>>>>", tabelData.length)    
+          if(tabelData && tabelData.length>0){
+            setTableData(tabelData)
+          }
+        }).catch((error) => {
               console.log("update",error);
-            });
+          });
         })
         .catch((error) => {
           console.log("create",error);
@@ -50,6 +51,8 @@ function App(): JSX.Element {
       }
     }
     getData()
+
+    return()=>setTableData([])
     
   },[])
 
@@ -81,16 +84,21 @@ function App(): JSX.Element {
               <TouchableHighlight style={styles.buttonContainer} activeOpacity={0.6} underlayColor="#CCCCCC" onPress={()=>filterData('year')}>
                 <Text style={styles.buttonLabelStyle}>Yearly</Text>
               </TouchableHighlight>
-              <TouchableHighlight style={styles.buttonContainer} activeOpacity={0.6} underlayColor="#CCCCCC" onPress={()=>filterData('name')}>
-                <Text style={styles.buttonLabelStyle}>Name</Text>
+              <TouchableHighlight style={styles.buttonContainer} activeOpacity={0.6} underlayColor="#CCCCCC" onPress={()=>filterData('asc')}>
+                <Text style={styles.buttonLabelStyle}>Name Ascending</Text>
+              </TouchableHighlight>
+              <TouchableHighlight style={styles.buttonContainer} activeOpacity={0.6} underlayColor="#CCCCCC" onPress={()=>filterData('dsc')}>
+                <Text style={styles.buttonLabelStyle}>Name Decending</Text>
               </TouchableHighlight>
             </ScrollView>
           </View>
           
           {
             tableData && tableData.length>0 ? tableData.map((data,index)=>{
+              let bookObject = eval('(' + data?.book + ')');
               return(<View key={data?.id+index} style={{width:300,height:100,backgroundColor:'#CCCCCC',borderRadius:5,alignSelf:'center',alignItems:'center',justifyContent:'center',marginTop:5}}>
                       <Text style={{color:'#111',fontSize:12}}>Id: {data?.id}</Text>
+                      <Text style={{color:'#111',fontSize:12}}>Book name: {bookObject?.name}</Text>
                       <Text style={{color:'#111',fontSize:12}}>Time: {data?.timePlaced}</Text>
                     </View>)
             }) :  <ActivityIndicator size="large" />
